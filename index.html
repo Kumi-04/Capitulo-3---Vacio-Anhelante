@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 3 - Vacío Anhelante</title>
+    <style>
+        /* ESTILOS GENERALES Y FONDO NOCTURNO */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #050508;
+            color: #eaeaea;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* CANVAS DE ESTRELLAS Y PÉTALOS */
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* CONTENEDOR PRINCIPAL CON EFECTO GLASSMORPHISM */
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 650px;
+            background: rgba(18, 18, 28, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+
+        /* ENCABEZADOS Y TEXTOS */
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #ffd1dc;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        p.intro-text {
+            font-size: 0.95rem;
+            color: #b0b5c0;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        /* TARJETA DE LA PREGUNTA */
+        .question-card {
+            display: none;
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        .question-card.active {
+            display: block;
+        }
+
+        .question-title {
+            font-size: 1.15rem;
+            color: #ffffff;
+            margin-bottom: 25px;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        /* BOTONES DE OPCIONES */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #d1d5db;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover {
+            background: rgba(255, 209, 220, 0.12);
+            border-color: #ffd1dc;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 209, 220, 0.1);
+        }
+
+        /* BARRAS DE PROGRESO SILENCIOSAS */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffb6c1, #ffd1dc);
+            width: 20%;
+            transition: width 0.4s ease;
+        }
+
+        /* SECCIÓN DE RESULTADO */
+        .result-card {
+            display: none;
+            animation: fadeIn 1s ease forwards;
+            text-align: center;
+        }
+
+        .result-card.active {
+            display: block;
+        }
+
+        .result-message {
+            font-size: 1.05rem;
+            color: #e2e8f0;
+            line-height: 1.7;
+            margin-bottom: 30px;
+            font-style: italic;
+            border-left: 2px solid #ffd1dc;
+            padding-left: 15px;
+            text-align: left;
+        }
+
+        .songs-title {
+            font-size: 1.05rem;
+            color: #ffd1dc;
+            margin-bottom: 20px;
+            text-align: left;
+            letter-spacing: 0.5px;
+            font-weight: 300;
+        }
+
+        .song-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .song-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 16px 20px;
+            border-radius: 10px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .song-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .song-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .song-name {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 0.95rem;
+        }
+
+        .song-artist {
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        .song-desc {
+            font-size: 0.85rem;
+            color: #d1d5db;
+            margin-top: 6px;
+            line-height: 1.45;
+            font-style: italic;
+            font-weight: 300;
+        }
+
+        .btn-restart {
+            background: transparent;
+            border: 1px solid rgba(255, 209, 220, 0.4);
+            color: #ffd1dc;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-restart:hover {
+            background: rgba(255, 209, 220, 0.15);
+            border-color: #ffd1dc;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="container">
+        
+        <!-- PANTALLA INTERACTIVA -->
+        <div id="quiz-section">
+            <h1>Moonlight on My Bones</h1>
+            <p class="intro-text">Un breve camino suave y sin prisas. Elige la respuesta que mejor abrace tu corazón hoy.</p>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+
+            <!-- PREGUNTA 1 -->
+            <div class="question-card active" data-question="0">
+                <div class="question-title">1. ¿Qué atmósfera le vendría mejor a tu mente en este momento?</div>
+                <div class="options-grid">
+                    <button class="option-btn" onclick="selectOption(0, 'A')">Un rincón cálido, silencioso y seguro para descansar de todo.</button>
+                    <button class="option-btn" onclick="selectOption(0, 'B')">Un cielo despejado con aire fresco para renovar energías.</button>
+                    <button class="option-btn" onclick="selectOption(0, 'C')">Una luz tenue con música suave que acompañe mis pensamientos.</button>
+                </div>
+            </div>
+
+            <!-- PREGUNTA 2 -->
+            <div class="question-card" data-question="1">
+                <div class="question-title">2. Cuando atraviesas un día difícil o agotador, ¿qué pensamiento te calma más?</div>
+                <div class="options-grid">
+                    <button class="option-btn" onclick="selectOption(1, 'A')">Saber que está bien detenerse y no poder con todo a la vez.</button>
+                    <button class="option-btn" onclick="selectOption(1, 'B')">Recordar que los días grises siempre pasan y mañana será diferente.</button>
+                    <button class="option-btn" onclick="selectOption(1, 'C')">Sentir que no estoy sola en el mundo y que hay gente que desea mi bien.</button>
+                </div>
+            </div>
+
+            <!-- PREGUNTA 3 -->
+            <div class="question-card" data-question="2">
+                <div class="question-title">3. Si pudieras detener el tiempo en un instante del día, ¿cuál elegirías?</div>
+                <div class="options-grid">
+                    <button class="option-btn" onclick="selectOption(2, 'A')">La tranquilidad de la noche cuando todo el mundo duerme.</button>
+                    <button class="option-btn" onclick="selectOption(2, 'B')">El atardecer cuando el cielo se pinta de colores antes de la calma.</button>
+                    <button class="option-btn" onclick="selectOption(2, 'C')">Una mañana despejada justo cuando el sol empieza a calentar.</button>
+                </div>
+            </div>
+
+            <!-- PREGUNTA 4 -->
+            <div class="question-card" data-question="3">
+                <div class="question-title">4. ¿Cómo sientes que se transmite el cariño y apoyo más sincero?</div>
+                <div class="options-grid">
+                    <button class="option-btn" onclick="selectOption(3, 'A')">A través de un silencio cómodo que brinde paz sin exigencias.</button>
+                    <button class="option-btn" onclick="selectOption(3, 'B')">Con palabras que recuerden lo valiosa y fuerte que eres.</button>
+                    <button class="option-btn" onclick="selectOption(3, 'C')">A través de detalles sencillos y canciones que hablen por sí solas.</button>
+                </div>
+            </div>
+
+            <!-- PREGUNTA 5 -->
+            <div class="question-card" data-question="4">
+                <div class="question-title">5. Al mirar hacia el futuro, ¿qué anhelo guardas en el pecho?</div>
+                <div class="options-grid">
+                    <button class="option-btn" onclick="selectOption(4, 'A')">Encontrar mi propia paz interior y aprender a querer cada paso del camino.</button>
+                    <button class="option-btn" onclick="selectOption(4, 'B')">Florecer a mi propio ritmo y alcanzar todo lo que me proponga.</button>
+                    <button class="option-btn" onclick="selectOption(4, 'C')">Estar rodeada de calma, serenidad y personas que sumen luz a mi vida.</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANTALLA DE RESULTADOS -->
+        <div class="result-card" id="result-section">
+            <h1>Melodías para abrazar tu noche 🌸</h1>
+            <p class="intro-text" style="margin-bottom:20px;">Un pequeño mapa guardado para ti:</p>
+            
+            <div class="result-message" id="result-message"></div>
+
+            <div class="songs-title">A veces, al pensar, se puede contemplar de esta manera:</div>
+            <ul class="song-list" id="song-list"></ul>
+
+            <button class="btn-restart" onclick="restartQuiz()">Elegir de nuevo</button>
+        </div>
+
+    </div>
+
+    <script>
+        /* === EFECTOS VISUALES: ESTRELLAS Y PÉTALOS REALISTAS === */
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Estrellas
+        const stars = Array.from({ length: 90 }, () => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 1.2 + 0.3,
+            alpha: Math.random(),
+            speed: Math.random() * 0.015 + 0.005
+        }));
+
+        // Pétalos de cerezo orgánicos y realistas
+        const petals = Array.from({ length: 50 }, () => ({
+            x: Math.random() * width,
+            y: Math.random() * height - height,
+            size: Math.random() * 8 + 10,
+            speedY: Math.random() * 1.2 + 0.7,
+            speedX: Math.random() * 0.5 - 0.25,
+            angle: Math.random() * Math.PI * 2,
+            spinSpeed: (Math.random() - 0.5) * 0.03,
+            flip: Math.random() * Math.PI,
+            flipSpeed: Math.random() * 0.03 + 0.01,
+            oscillation: Math.random() * Math.PI * 2,
+            oscSpeed: Math.random() * 0.02 + 0.01,
+            opacity: Math.random() * 0.4 + 0.5
+        }));
+
+        function drawPetalPath(size) {
+            ctx.beginPath();
+            ctx.moveTo(0, -size);
+            ctx.bezierCurveTo(size * 0.6, -size * 0.8, size * 0.8, size * 0.2, 0, size);
+            ctx.bezierCurveTo(-size * 0.8, size * 0.2, -size * 0.6, -size * 0.8, 0, -size);
+            ctx.closePath();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            stars.forEach(star => {
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0) star.speed = -star.speed;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(star.alpha)})`;
+                ctx.fill();
+            });
+
+            petals.forEach(p => {
+                p.y += p.speedY;
+                p.oscillation += p.oscSpeed;
+                p.x += p.speedX + Math.sin(p.oscillation) * 0.6;
+                p.angle += p.spinSpeed;
+                p.flip += p.flipSpeed;
+
+                if (p.y > height + 20) {
+                    p.y = -20;
+                    p.x = Math.random() * width;
+                }
+
+                const scaleX = Math.cos(p.flip);
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.angle);
+                ctx.scale(scaleX, 1);
+
+                const grad = ctx.createLinearGradient(0, -p.size, 0, p.size);
+                grad.addColorStop(0, `rgba(255, 230, 238, ${p.opacity})`);
+                grad.addColorStop(0.6, `rgba(255, 182, 193, ${p.opacity * 0.85})`);
+                grad.addColorStop(1, `rgba(240, 128, 148, ${p.opacity * 0.6})`);
+
+                ctx.fillStyle = grad;
+                drawPetalPath(p.size);
+                ctx.fill();
+
+                ctx.restore();
+            });
+
+            requestAnimationFrame(draw);
+        }
+        draw();
+
+        /* === MAPA DINÁMICO CON REFLEXIONES CÁLIDAS Y NATURALES === */
+        let currentQuestion = 0;
+        const selectedAnswers = [];
+
+        const questionSongs = [
+            // Pregunta 1
+            {
+                A: { title: "Magic Shop", artist: "BTS", desc: "A veces el mundo exige demasiado y está bien querer cerrar la puerta un rato. Si alguna vez sientes que todo pesa, ojalá recuerdes que siempre hay un rincón tranquilo esperándote." },
+                B: { title: "Ecos de Amor", artist: "Jesse & Joy", desc: "Hay canciones que no necesitan explicación porque se sienten como un abrazo a destiempo. Que esta melodía te regale un poquito de la paz que mereces." },
+                C: { title: "hope ur ok", artist: "Olivia Rodrigo", desc: "Aunque los días se vuelvan ajetreados o no siempre hablemos, sinceramente deseo desde el alma que la vida te esté tratando con mucha gentileza." }
+            },
+            // Pregunta 2
+            {
+                A: { title: "Count on Me", artist: "Bruno Mars", desc: "Sin presión ni grandes discursos... solo para recordarte de forma muy sencilla que, si alguna vez necesitas alguien que te escuche, aquí voy a estar." },
+                B: { title: "Desafiando el Destino", artist: "María Becerra", desc: "A veces nos toca pasar por días grises que parecen eternos, pero me consta la luz que llevas dentro; nada apaga lo bonita que es tu manera de ser." },
+                C: { title: "Aprender a Quererte", artist: "Morat", desc: "Cuidar a alguien a la distancia también es aprender a respetar sus tiempos y su espacio, deseándole siempre lo mejor sin pedir nada a cambio." }
+            },
+            // Pregunta 3
+            {
+                A: { title: "Zero O'Clock (00:00)", artist: "BTS", desc: "Lo bonito de la medianoche es que el día anterior muere y todo vuelve a empezar en cero. Mañana es una oportunidad nueva para respirar profundo." },
+                B: { title: "Espacio Sideral", artist: "Jesse & Joy", desc: "Hay instantes sencillos que se quedan guardados para siempre en la memoria, como ver el cielo teñirse de colores antes de que caiga la noche." },
+                C: { title: "Just the Way You Are", artist: "Bruno Mars", desc: "Ojalá pudieras verte a través de otros ojos por un segundo, solo para que te dieras cuenta de lo especial y hermosa que eres exactamente como eres." }
+            },
+            // Pregunta 4
+            {
+                A: { title: "Promise", artist: "Laufey", desc: "El cariño más sincero es el que no pide explicaciones ni exige nada; simplemente está ahí, tranquilo, feliz de saber que estás bien." },
+                B: { title: "The Rose Song", artist: "Olivia Rodrigo", desc: "A veces olvidamos lo fuertes que somos hasta que nos toca florecer en medio de la tormenta. Tienes una valentía inmensa dentro de ti." },
+                C: { title: "Antes de los Veinte", artist: "Morat", desc: "La vida va pasando rápido, pero no hay ninguna prisa por resolverlo todo hoy. Todo llega justo cuando tiene que llegar." }
+            },
+            // Pregunta 5
+            {
+                A: { title: "Answer: Love Myself", artist: "BTS", desc: "De todas las cosas que puedes aprender en esta vida, la más bonita siempre será aprender a querer tu propio camino con paciencia." },
+                B: { title: "Dime Cómo Hago", artist: "María Becerra", desc: "Confía en tu intuición y en tus pasos. A veces el camino parece incierto, pero cada decisión te está llevando a un lugar hermoso." },
+                C: { title: "Mikrokosmos", artist: "BTS", desc: "Cada persona es un universo entero con su propia luz. Nunca dudes del brillo tan único que le aportas a los lugares donde estás." }
+            }
+        ];
+
+        // Mensajes personalizados
+        const customMessages = [
+            "En los días en que el mundo sea demasiado ruidoso o pesado, recuerda que está bien detenerse. No tienes que poder con todo sola; siempre mereces un rincón de paz donde respirar tranquila. Ojalá estas palabras te abracen hoy, Angie.",
+            "Tienes dentro de ti una fuerza inmensa y silenciosa. No hay prisa por llegar a ninguna parte; florecerás exactamente a tu propio tiempo y cada paso tuyo vale la pena. Confío plenamente en la luz que llevas contigo, Angie.",
+            "Hay una luz muy sutil e inconfundible en tu forma de ser. Aun cuando no te des cuenta, Angie, tu manera de mirar el mundo le hace bien a quienes tenemos la suerte de coincidir contigo."
+        ];
+
+        function selectOption(qIndex, option) {
+            selectedAnswers.push({ qIndex, option });
+            currentQuestion++;
+
+            const questions = document.querySelectorAll('.question-card');
+            
+            if (currentQuestion < questions.length) {
+                questions.forEach(q => q.classList.remove('active'));
+                questions[currentQuestion].classList.add('active');
+                
+                const progressPercent = ((currentQuestion + 1) / questions.length) * 100;
+                document.getElementById('progress-fill').style.width = progressPercent + '%';
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-section').style.display = 'none';
+            const resultCard = document.getElementById('result-section');
+            resultCard.classList.add('active');
+
+            const messageIndex = selectedAnswers.filter(a => a.option === 'A').length >= 2 ? 0 : 
+                                 (selectedAnswers.filter(a => a.option === 'B').length >= 2 ? 1 : 2);
+
+            document.getElementById('result-message').innerText = `"${customMessages[messageIndex]}"`;
+
+            const songListEl = document.getElementById('song-list');
+            songListEl.innerHTML = '';
+
+            selectedAnswers.forEach(ans => {
+                const song = questionSongs[ans.qIndex][ans.option];
+                const li = document.createElement('li');
+                li.className = 'song-item';
+                li.innerHTML = `
+                    <div class="song-info">
+                        <span class="song-name">${song.title}</span>
+                        <span class="song-artist">${song.artist}</span>
+                        <span class="song-desc">${song.desc}</span>
+                    </div>
+                `;
+                songListEl.appendChild(li);
+            });
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            selectedAnswers.length = 0;
+
+            document.getElementById('result-section').classList.remove('active');
+            document.getElementById('quiz-section').style.display = 'block';
+
+            const questions = document.querySelectorAll('.question-card');
+            questions.forEach(q => q.classList.remove('active'));
+            questions[0].classList.add('active');
+
+            document.getElementById('progress-fill').style.width = '20%';
+        }
+    </script>
+</body>
+</html>
